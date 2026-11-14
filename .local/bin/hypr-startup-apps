@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+sleep 1
+
+hyprctl eval 'hl.dispatch(hl.dsp.focus({ workspace = 1 }))' >/dev/null 2>&1 || true
+kitty >/dev/null 2>&1 &
+
+sleep 1
+~/.local/bin/hypr-kde-wallet >/dev/null 2>&1 || true
+
+systemctl --user start hypr-wallpaper.service
+nm-applet >/dev/null 2>&1 &
+
+/usr/bin/mattermost-desktop >/dev/null 2>&1 &
+
+vivaldi-snapshot --password-store=kwallet6 >/dev/null 2>&1 &
+
+sleep 2
+hyprctl eval 'hl.dispatch(hl.dsp.focus({ workspace = 1 }))' >/dev/null 2>&1 || true

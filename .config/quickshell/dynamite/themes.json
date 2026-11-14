@@ -1,0 +1,6 @@
+[
+  {"id":"tidepool","name":"Tidepool","bg":"#0b1112","surface":"#192022","text":"#d9e5d9","muted":"#8fa5a0","accent":"#9bcac1","swatches":["#9bcac1","#d9e5d9","#8fa5a0","#527f78","#192022"]},
+  {"id":"catppuccin","name":"Catppuccin","bg":"#1e1e2e","surface":"#313244","text":"#cdd6f4","muted":"#a6adc8","accent":"#94e2d5","swatches":["#f5c2e7","#a6e3a1","#f9e2af","#89b4fa","#94e2d5"]},
+  {"id":"rose-pine","name":"Rosé Pine","bg":"#191724","surface":"#26233a","text":"#e0def4","muted":"#908caa","accent":"#ebbcba","swatches":["#ebbcba","#c4a7e7","#9ccfd8","#f6c177","#31748f"]},
+  {"id":"e-ink","name":"E-ink","bg":"#111111","surface":"#262626","text":"#ededed","muted":"#aaaaaa","accent":"#d6d6d6","swatches":["#ededed","#d6d6d6","#aaaaaa","#777777","#444444"]}
+]

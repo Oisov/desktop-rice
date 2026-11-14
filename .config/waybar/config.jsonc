@@ -1,0 +1,178 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 38,
+  "margin-top": 10,
+  "margin-bottom": 0,
+  "margin-left": 0,
+  "margin-right": 0,
+  "spacing": 7,
+  "modules-left": [
+    "custom/launcher",
+    "custom/media",
+    "temperature",
+    "wlr/taskbar"
+  ],
+  "modules-right": [],
+  "custom/launcher": {
+    "format": "",
+    "tooltip-format": "Applications",
+    "on-click": "~/.local/bin/bar-menu-guard ~/.local/bin/dynamite toggle launcher",
+    "on-click-right": "~/.local/bin/bar-menu-guard dolphin"
+  },
+  "hyprland/workspaces": {
+    "disable-scroll": false,
+    "all-outputs": true,
+    "format": "{icon}",
+    "format-icons": {
+      "default": "●",
+      "active": "●",
+      "urgent": "!"
+    },
+    "persistent-workspaces": {
+      "*": 5
+    },
+    "on-click": "activate"
+  },
+  "wlr/taskbar": {
+    "format": "{icon}",
+    "icon-size": 20,
+    "tooltip-format": "{title}",
+    "on-click": "activate",
+    "on-click-middle": "close",
+    "ignore-list": [
+      "wofi",
+      "Mattermost.Desktop"
+    ],
+    "icon-theme": [
+      "dynamite-waybar"
+    ],
+    "app_ids-mapping": {
+      "com.t3tools.T3Code": "t3code"
+    }
+  },
+  "hyprland/window": {
+    "format": "{}",
+    "max-length": 48,
+    "separate-outputs": true
+  },
+  "backlight": {
+    "format": "<span foreground='#9bcac1'>󰃠</span> {percent}%",
+    "tooltip": false,
+    "on-click": "~/.local/bin/bar-menu-guard ~/.local/bin/slider-popup brightness",
+    "on-click-right": "~/.local/bin/bar-menu-guard systemsettings kcm_powerdevilprofilesconfig",
+    "on-scroll-up": "swayosd-client --brightness raise",
+    "on-scroll-down": "swayosd-client --brightness lower"
+  },
+  "pulseaudio": {
+    "format": "<span foreground='#9bcac1' size='125%' rise='-1pt'>{icon}</span> {volume}%",
+    "format-muted": "<span foreground='#8fa5a0' size='125%' rise='-1pt'>󰝟</span> {volume}%",
+    "format-icons": {
+      "default": [
+        "󰕿",
+        "󰖀",
+        "󰕾"
+      ]
+    },
+    "tooltip": false,
+    "on-click": "~/.local/bin/bar-menu-guard ~/.local/bin/slider-popup volume",
+    "on-click-middle": "~/.local/bin/bar-menu-guard swayosd-client --output-volume mute-toggle",
+    "on-click-right": "~/.local/bin/bar-menu-guard pavucontrol",
+    "on-scroll-up": "swayosd-client --output-volume raise",
+    "on-scroll-down": "swayosd-client --output-volume lower"
+  },
+  "network": {
+    "interval": 10,
+    "format-wifi": "<span foreground='#9bcac1'>󰤨</span> {essid}",
+    "format-ethernet": "<span foreground='#9bcac1'>󰈀</span>",
+    "format-linked": "<span foreground='#9bcac1'>󰈀</span>",
+    "format-disconnected": "<span foreground='#8fa5a0'>󰤭</span>",
+    "tooltip-format": "{ifname}: {ipaddr}/{cidr}\nUp {bandwidthUpBits}  Down {bandwidthDownBits}",
+    "on-click": "~/.local/bin/bar-menu-guard ~/.local/bin/wifi-menu",
+    "on-click-right": "~/.local/bin/bar-menu-guard systemsettings kcm_networkmanagement",
+    "interface": "wlp0s20f3",
+    "max-length": 20
+  },
+  "battery": {
+    "interval": 10,
+    "states": {
+      "warning": 30,
+      "critical": 15
+    },
+    "format": "<span foreground='#9bcac1'>{icon}</span> {capacity}%",
+    "format-charging": "<span foreground='#9bcac1'>󰂄</span> {capacity}%",
+    "format-plugged": "<span foreground='#9bcac1'>󰚥</span> {capacity}%",
+    "tooltip-format": "{capacity}% {time}",
+    "on-click": "~/.local/bin/bar-menu-guard systemsettings kcm_powerdevilprofilesconfig",
+    "on-click-right": "~/.local/bin/bar-menu-guard kcmshell6 kcm_energyinfo",
+    "format-icons": [
+      "󰁺",
+      "󰁻",
+      "󰁼",
+      "󰁽",
+      "󰁾",
+      "󰁿",
+      "󰂀",
+      "󰂁",
+      "󰂂",
+      "󰁹"
+    ],
+    "format-warning": "<span foreground='#dfb479'>{icon}</span> {capacity}%",
+    "format-critical": "<span foreground='#e18593'>{icon}</span> {capacity}%"
+  },
+  "tray": {
+    "icon-size": 18,
+    "ignore-list": [
+      "nm_applet",
+      "nm-applet"
+    ],
+    "spacing": 6
+  },
+  "clock": {
+    "format": "{:%H:%M}",
+    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+    "today-format": "<b>{}</b>",
+    "on-click-right": "~/.local/bin/bar-menu-guard systemsettings kcm_clock"
+  },
+  "custom/power": {
+    "format": "󰐥",
+    "tooltip-format": "Power menu",
+    "on-click": "~/.local/bin/bar-menu-guard ~/.local/bin/hypr-power-menu"
+  },
+  "custom/media": {
+    "exec": "playerctl --ignore-player=vivaldi --follow metadata --format '{{status}}\t{{markup_escape(title)}}\t{{markup_escape(artist)}}' 2>/dev/null | jq --unbuffered -cR 'split(\"\\t\") as [$s, $t, $a] | if ($t // \"\") == \"\" then {text: \"No media\", alt: \"none\", tooltip: \"\"} else {text: $t, alt: $s, tooltip: ($t + (if ($a // \"\") == \"\" then \"\" else \"\\n\" + $a end))} end'",
+    "return-type": "json",
+    "exec-on-event": false,
+    "restart-interval": 2,
+    "format": "<span foreground='#9bcac1'>{icon}</span> {text}",
+    "max-length": 24,
+    "on-click": "~/.local/bin/bar-menu-guard playerctl --ignore-player=vivaldi play-pause",
+    "on-scroll-up": "playerctl --ignore-player=vivaldi next",
+    "on-scroll-down": "playerctl --ignore-player=vivaldi previous",
+    "format-icons": {
+      "Playing": "",
+      "Paused": "",
+      "Stopped": "",
+      "none": "",
+      "default": ""
+    }
+  },
+  "temperature": {
+    "hwmon-name": "coretemp",
+    "input-filename": "temp1_input",
+    "interval": 5,
+    "critical-threshold": 85,
+    "format": "<span foreground='#9bcac1'></span> {temperatureC}°C",
+    "tooltip-format": "CPU {temperatureC}°C",
+    "on-click": "~/.local/bin/bar-menu-guard kitty -e top",
+    "format-critical": "<span foreground='#dfb479'></span> {temperatureC}°C"
+  },
+  "custom/notifications": {
+    "exec": "if makoctl mode | grep -qx do-not-disturb; then printf '{\"text\":\"󰂛\",\"class\":\"dnd\",\"tooltip\":\"Do not disturb\"}\\n'; else printf '{\"text\":\"󰂚\",\"class\":\"normal\",\"tooltip\":\"Notifications\"}\\n'; fi",
+    "return-type": "json",
+    "interval": 2,
+    "on-click": "~/.local/bin/bar-menu-guard makoctl restore",
+    "on-click-right": "~/.local/bin/bar-menu-guard makoctl dismiss",
+    "on-click-middle": "~/.local/bin/bar-menu-guard makoctl mode -t do-not-disturb"
+  }
+}

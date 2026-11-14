@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# Wi-Fi picker: rofi dropdown over nmcli.
+set -uo pipefail
+
+theme="$HOME/.config/rofi/bar-menu.rasi"
+menu() { "$HOME/.local/bin/bar-menu-rows" | rofi -dmenu -i -theme "$theme" -markup-rows "$@"; }
+notify() { notify-send -a Wi-Fi -i network-wireless "$@"; }
+esc() { sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' <<<"$1"; }
+
+if [[ "$(nmcli radio wifi)" != enabled ]]; then
+  choice="$(printf '󰖩  Turn Wi-Fi on\n' | menu -p '󰖪' -format i)" || exit 0
+  [[ "$choice" == 0 ]] && nmcli radio wifi on && notify "Wi-Fi on"
+  exit 0
+fi
+
+# Show the cached scan instantly; refresh in the background for next time (a live scan takes ~3s).
+(nmcli device wifi rescan >/dev/null 2>&1 &)
+
+# Profile names are arbitrary; match their configured SSID and operate by UUID.
+declare -A saved=() active=()
+while IFS=: read -r uuid type is_active; do
+  [[ "$type" == 802-11-wireless ]] || continue
+  ssid=$(nmcli -g 802-11-wireless.ssid -e no connection show uuid "$uuid") || continue
+  [[ -n "$ssid" ]] || continue
+  [[ -z "${saved[$ssid]:-}" ]] && saved["$ssid"]=$uuid
+  if [[ "$is_active" == yes ]]; then
+    saved["$ssid"]=$uuid
+    active["$ssid"]=$uuid
+  fi
+done < <(nmcli -t -e no -f UUID,TYPE,ACTIVE connection show)
+
+# Scan: one row per SSID, strongest first. SSID is last so colons inside it survive.
+declare -A seen=()
+ssids=() secure=() rows=() current=""
+while IFS=: read -r inuse signal security ssid; do
+  [[ -z "$ssid" || -n "${seen[$ssid]:-}" ]] && continue
+  seen["$ssid"]=1
+  if   ((signal >= 75)); then bars=󰤨
+  elif ((signal >= 50)); then bars=󰤥
+  elif ((signal >= 25)); then bars=󰤢
+  else bars=󰤟; fi
+  lock=""; [[ -n "$security" && "$security" != "--" ]] && lock="󰌾"
+  tag=""
+  if [[ "$inuse" == "*" ]]; then current="$ssid"; tag="connected"
+  elif [[ -n "${saved[$ssid]:-}" ]]; then tag="saved"; fi
+  ssids+=("$ssid"); secure+=("${lock:+1}")
+  # Pad with spaces (the text is monospace) so the lock lands in a right-hand column.
+  name="$ssid"; max=$(( 27 - ${#tag} - (${#tag} ? 2 : 0) ))
+  ((${#name} > max)) && name="${name:0:max-1}…"
+  pad=$(( 28 - ${#name} - ${#tag} - (${#tag} ? 2 : 0) ))
+  rows+=("$bars  $(esc "$name")${tag:+  <span alpha='60%'>$tag</span>}$(printf '%*s' "$pad" '')$lock")
+done < <(nmcli -t -e no -f IN-USE,SIGNAL,SECURITY,SSID device wifi list --rescan no | sort -t: -k1,1r -k2,2nr)
+
+actions=("󰑐  Rescan" "󰖪  Turn Wi-Fi off" "󰒓  Advanced settings")
+[[ -n "$current" ]] && actions=("󰖪  Disconnect from $(esc "$current")" "${actions[@]}")
+
+idx="$(printf '%s\n' "${rows[@]}" "${actions[@]}" | menu -p '󰤨' -format i ${current:+-a 0} -no-custom)" || exit 0
+[[ -z "$idx" ]] && exit 0
+
+if ((idx < ${#rows[@]})); then
+  ssid="${ssids[idx]}"
+  [[ "$ssid" == "$current" ]] && exit 0
+  if [[ -n "${saved[$ssid]:-}" ]] && nmcli connection up uuid "${saved[$ssid]}" >/dev/null 2>&1; then
+    notify "Connected" "$ssid"; exit 0
+  fi
+  if [[ -n "${secure[idx]}" ]]; then
+    pw="$(rofi -dmenu -password -theme "$theme" -p '󰌾' -mesg "Password for <b>$(esc "$ssid")</b>" -l 0)" || exit 0
+    out="$(nmcli device wifi connect "$ssid" password "$pw" 2>&1)"
+  else
+    out="$(nmcli device wifi connect "$ssid" 2>&1)"
+  fi
+  if [[ $? -eq 0 ]]; then
+    notify "Connected" "$ssid"
+  else
+    notify -u critical "Couldn't connect to $ssid" "${out##*Error: }"
+  fi
+  exit 0
+fi
+
+case "${actions[idx - ${#rows[@]}]}" in
+  *Disconnect*)
+    if [[ -n "${active[$current]:-}" ]]; then
+      nmcli connection down uuid "${active[$current]}" >/dev/null && notify "Disconnected" "$current"
+    else
+      notify -u critical "Couldn't disconnect" "The active Wi-Fi profile changed; reopen the menu."
+    fi ;;
+  *Rescan*) nmcli device wifi rescan >/dev/null 2>&1; sleep 2; exec "$0" ;;
+  *"Turn Wi-Fi off"*) nmcli radio wifi off && notify "Wi-Fi off" ;;
+  *Advanced*) nm-connection-editor & ;;
+esac

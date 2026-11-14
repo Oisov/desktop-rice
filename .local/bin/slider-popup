@@ -1,0 +1,192 @@
+#!/usr/bin/env python3
+"""Slider popup under the bar: `slider-popup volume|brightness`.
+Click the pill again to close it; the chevron opens the full settings app."""
+import os, re, signal, subprocess, sys
+import gi, warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+gi.require_version("Gtk", "3.0")
+gi.require_version("GtkLayerShell", "0.1")
+from gi.repository import Gtk, Gdk, GLib, GtkLayerShell
+
+RUN = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
+KIND = sys.argv[1] if len(sys.argv) > 1 else "volume"
+PIDF = f"{RUN}/slider-popup.pid"
+SETTINGS = {"volume": ["pavucontrol"], "brightness": ["systemsettings", "kcm_powerdevilprofilesconfig"]}[KIND]
+WIDTH = 320
+
+try:
+    pid, kind = open(PIDF).read().split()
+    os.kill(int(pid), signal.SIGTERM)
+    running = kind == KIND  # the other slider is replaced, the same one is toggled off
+except (OSError, ValueError):
+    running = False
+if running:
+    sys.exit()
+open(PIDF, "w").write(f"{os.getpid()} {KIND}")
+
+
+def pactl(*a):
+    return subprocess.run(["pactl", *a], capture_output=True, text=True).stdout
+
+
+def volume():
+    m = re.search(r"(\d+)%", pactl("get-sink-volume", "@DEFAULT_SINK@"))
+    return int(m.group(1)) if m else 0
+
+
+def muted():
+    return KIND == "volume" and "yes" in pactl("get-sink-mute", "@DEFAULT_SINK@")
+
+
+def brightness():
+    out = subprocess.run(["brightnessctl", "-m"], capture_output=True, text=True).stdout
+    return int(out.split(",")[3].rstrip("%")) if out else 50
+
+
+# Colors follow the applied Dynamite theme (written by its bridge).
+try:
+    PALETTE = open(os.path.expanduser("~/.local/state/dynamite/palette.css")).read()
+except OSError:
+    PALETTE = "@define-color bg #0b1112; @define-color surface #192022; @define-color text #d9e5d9; @define-color muted #8fa5a0; @define-color accent #9bcac1; @define-color hover #314040; @define-color pressed #445957; @define-color line #3a4a4a;"
+CSS = (PALETTE + """
+window { background: transparent; }
+.card { background: alpha(@bg, 0.97); border: 1px solid @line; border-radius: 999px; padding: 10px; }
+button { background: @surface; border: none; border-radius: 999px; min-width: 38px; min-height: 38px; padding: 0;
+         color: @accent; font-family: "JetBrainsMono Nerd Font Propo"; font-size: 20px; box-shadow: none; }
+button:hover { background: @hover; }
+button:active { background: @pressed; }
+button.muted { color: @muted; }
+button.settings { background: transparent; color: @accent; min-width: 30px; }
+button.settings:hover { background: @hover; color: @accent; }
+button label { font-size: 20px; color: inherit; min-width: 0; }
+button.settings label { font-size: 16px; }
+label { color: @text; font-family: "JetBrainsMono Nerd Font Propo"; font-weight: 600; font-size: 14px; min-width: 44px; }
+scale trough { background: alpha(@accent, 0.18); border: none; border-radius: 999px; min-height: 8px; }
+scale highlight { background: @accent; border: none; border-radius: 999px; }
+scale.muted highlight { background: @muted; }
+scale slider { background: @text; border: none; border-radius: 999px; min-width: 18px; min-height: 18px; margin: -6px; box-shadow: none; }
+""").encode()
+prov = Gtk.CssProvider()
+prov.load_from_data(CSS)
+Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), prov, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+win = Gtk.Window()
+GtkLayerShell.init_for_window(win)
+GtkLayerShell.set_layer(win, GtkLayerShell.Layer.OVERLAY)
+GtkLayerShell.set_namespace(win, "slider-popup")
+GtkLayerShell.set_keyboard_mode(win, GtkLayerShell.KeyboardMode.ON_DEMAND)
+# Full-screen transparent surface (below the bar's zone) so an outside click only closes the popup.
+for edge in (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.BOTTOM, GtkLayerShell.Edge.LEFT, GtkLayerShell.Edge.RIGHT):
+    GtkLayerShell.set_anchor(win, edge, True)
+try:
+    x = int(subprocess.run(["hyprctl", "cursorpos"], capture_output=True, text=True).stdout.split(",")[0])
+except ValueError:
+    x = 1200
+mon = Gdk.Display.get_default().get_monitor(0).get_geometry()
+
+box = Gtk.Box(spacing=12)
+box.get_style_context().add_class("card")
+box.get_style_context().add_class(KIND)
+box.set_size_request(WIDTH, -1)
+card = Gtk.EventBox(halign=Gtk.Align.START, valign=Gtk.Align.START)
+card.set_margin_start(max(10, min(x - WIDTH // 2, mon.width - WIDTH - 10)))
+card.set_margin_top(8)  # measured from below waybar's reserved zone
+card.add(box)
+btn = Gtk.Button()
+scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 5 if KIND == "brightness" else 0, 100, 1)  # never let the screen go black
+scale.set_draw_value(False)
+scale.set_hexpand(True)
+scale.set_valign(Gtk.Align.CENTER)
+lbl = Gtk.Label(xalign=1)
+box.pack_start(btn, False, False, 0)
+box.pack_start(scale, True, True, 0)
+box.pack_start(lbl, False, False, 0)
+more = Gtk.Button(label="󰅂")
+more.get_style_context().add_class("settings")
+more.connect("clicked", lambda _: (subprocess.Popen(SETTINGS, start_new_session=True), Gtk.main_quit()))
+box.pack_start(more, False, False, 0)
+catcher = Gtk.EventBox()
+catcher.add(card)
+win.add(catcher)
+
+
+def outside(_, e):
+    if e.window == catcher.get_window():  # presses on the card itself bubble up from the card's window
+        Gtk.main_quit()
+    return True
+
+
+catcher.connect("button-press-event", outside)
+
+
+def refresh():
+    m = muted()
+    v = int(scale.get_value())
+    if KIND == "brightness":
+        btn.set_label("󰃞" if v < 34 else "󰃟" if v < 67 else "󰃠")
+    else:
+        btn.set_label("󰝟" if m else ("󰕿" if v < 34 else "󰖀" if v < 67 else "󰕾"))
+    lbl.set_text(f"{v}%")
+    for w in (btn, scale):
+        (w.get_style_context().add_class if m else w.get_style_context().remove_class)("muted")
+
+
+scale.set_value(brightness() if KIND == "brightness" else volume())
+refresh()
+
+
+def on_change(s):
+    v = int(s.get_value())
+    if KIND == "brightness":
+        subprocess.Popen(["brightnessctl", "-q", "set", f"{v}%"])
+    else:
+        subprocess.Popen(["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{v}%"])
+    if muted():
+        pactl("set-sink-mute", "@DEFAULT_SINK@", "0")
+    refresh()
+    bump()
+
+
+def on_button(_):
+    if KIND == "brightness":  # the sun button jumps between dim and full
+        scale.set_value(30 if scale.get_value() > 50 else 100)
+        return
+    pactl("set-sink-mute", "@DEFAULT_SINK@", "toggle")
+    refresh()
+    bump()
+
+
+scale.connect("value-changed", on_change)
+btn.connect("clicked", on_button)
+
+# Close: Escape, or ~1s after the pointer leaves, or 3s if it's never touched.
+timer = [None]
+
+
+def close_later(ms):
+    if timer[0]:
+        GLib.source_remove(timer[0])
+    timer[0] = GLib.timeout_add(ms, Gtk.main_quit)
+
+
+def bump():
+    if timer[0]:
+        GLib.source_remove(timer[0])
+        timer[0] = None
+
+
+card.connect("enter-notify-event", lambda *_: bump())
+card.connect("leave-notify-event", lambda w, e: e.detail != Gdk.NotifyType.INFERIOR and close_later(900))
+win.connect("key-press-event", lambda w, e: e.keyval == Gdk.KEY_Escape and Gtk.main_quit())
+win.connect("destroy", Gtk.main_quit)
+GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, lambda *_: Gtk.main_quit() or False)
+close_later(3000)
+
+win.show_all()
+try:
+    Gtk.main()
+finally:
+    try:
+        os.remove(PIDF)
+    except OSError:
+        pass

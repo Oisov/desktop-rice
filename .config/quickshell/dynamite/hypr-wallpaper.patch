@@ -1,0 +1,47 @@
+--- hypr-wallpaper.before-dynamite
++++ hypr-wallpaper
+@@ -7,6 +7,9 @@
+ export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
+ export WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-1}
+ mkdir -p "$CACHE"
++# Serialize manual changes with the time-of-day timer.
++exec 9>"$CACHE/lock"
++flock 9
+ 
+ slot_now() {
+   local t=$((10#$(date +%H) * 60 + 10#$(date +%M)))
+@@ -17,19 +20,23 @@
+   else                           echo night
+   fi
+ }
+-force=0
++force=0 chosen=
+ case ${1:-} in
+   "") slot=$(slot_now) ;;
+   next) slot=$(slot_now); force=1 ;;
++  set) slot=$(slot_now); chosen=$(realpath -e -- "${2:?usage: hypr-wallpaper set FILE}")
++       [[ -f $chosen ]] || { echo "not a file: $chosen" >&2; exit 2; } ;;
+   morning|day|evening|night) slot=$1; force=1 ;;
+-  *) echo "usage: hypr-wallpaper [next|morning|day|evening|night]" >&2; exit 2 ;;
++  *) echo "usage: hypr-wallpaper [next|morning|day|evening|night|set FILE]" >&2; exit 2 ;;
+ esac
+ 
+ today=$(date +%F)
+ s_day= s_slot= pick=
+ if [[ -f $STATE ]]; then read -r s_day s_slot pick < "$STATE" || true; fi
+ previous=$pick
+-if (( force )) || [[ $s_day != "$today" || $s_slot != "$slot" || ! -f $pick ]]; then
++if [[ -n $chosen ]]; then
++  pick=$chosen
++elif (( force )) || [[ $s_day != "$today" || $s_slot != "$slot" || ! -f $pick ]]; then
+   mapfile -d '' -t images < <(find "$LIB/$slot" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) ! -iname '*.wide.*' -print0)
+   (( ${#images[@]} )) || { echo "no wallpapers in $LIB/$slot" >&2; exit 1; }
+   pick=${images[RANDOM % ${#images[@]}]}
+@@ -41,5 +48,6 @@
+ for _ in {1..50}; do awww query >/dev/null 2>&1 && break; sleep 0.1; done
+ awww img --resize crop --transition-type fade --transition-duration 3 --transition-fps 60 "$pick"
+ ln -sfn "$pick" "$CACHE/current"
+-printf '%s %s %s\n' "$today" "$slot" "$pick" > "$STATE"
++printf '%s %s %s\n' "$today" "$slot" "$pick" > "$STATE.tmp"
++mv -f "$STATE.tmp" "$STATE"
+ printf '%s: %s\n' "$slot" "$pick"

@@ -1,0 +1,59 @@
+/* Two flush side bars at 80% base; a hovered item fills to 100% of the same base. Accent is for icons only. */
+@import url("file:///home/oisov/.local/state/dynamite/palette.css");
+
+* {
+  border: none;
+  border-radius: 0;
+  font-family: "JetBrainsMono Nerd Font Propo", "Noto Sans", "Noto Sans Symbols 2", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 0;
+}
+window#waybar { background: transparent; color: @text; }
+/* Square at the screen edge, rounded toward the centre island. Edge padding keeps the old 10px inset. */
+.modules-left, .modules-right { background-color: alpha(@bg, 0.8); }
+.modules-left { border-radius: 0 19px 19px 0; padding: 0 6px 0 10px; }
+.modules-right { border-radius: 19px 0 0 19px; padding: 0 10px 0 6px; }
+window#waybar.hidden { opacity: 0.2; }
+#custom-launcher, #custom-media, #temperature, #taskbar,
+#tray, #backlight, #pulseaudio, #network, #battery,
+#custom-notifications, #custom-power {
+  background: transparent;
+  color: @text;
+  transition: background-color 120ms ease-out;
+  border-radius: 20px;
+  padding: 0 13px;
+  margin: 2px 0;
+}
+#custom-launcher { color: @accent; font-size: 19px; padding: 0 15px 0 13px; }
+#custom-media { font-family: "JetBrainsMono Nerd Font Mono"; }
+#custom-notifications.dnd { color: @muted; }
+#taskbar { padding: 0 3px; }
+#taskbar button { padding: 0 5px; margin: 3px 0; border-radius: 16px; }
+#taskbar button.active { background: alpha(@accent, 0.22); }
+#taskbar button:hover { background: @bg; }
+tooltip { background: alpha(@bg, 0.97); border-radius: 10px; border: 1px solid @line; }
+tooltip label { color: @text; font-size: 14px; padding: 4px; }
+#custom-notifications { padding: 0 14px; font-size: 15px; }
+#custom-power { padding: 0 14px; font-size: 18px; }
+/* Give the tray the same outer pill geometry as its neighbouring icon buttons. */
+#tray { padding: 0 12px; min-width: 18px; }
+#tray > * { padding: 0; margin: 0; background: transparent; }
+#tray > .passive { -gtk-icon-effect: dim; }
+
+/* Every pill with a click action answers the pointer. */
+#custom-launcher:hover, #custom-media:hover, #temperature:hover, #backlight:hover,
+#pulseaudio:hover, #network:hover, #battery:hover, #custom-notifications:hover,
+#custom-power:hover, #tray:hover,
+#custom-launcher:active, #custom-media:active, #backlight:active, #pulseaudio:active,
+#network:active, #custom-notifications:active, #custom-power:active { background: @bg; }
+#tray menu { background: @bg; color: @text; border: 1px solid @line; border-radius: 12px; padding: 6px; }
+#tray menu menuitem { border-radius: 8px; padding: 4px 10px; }
+#tray menu menuitem:hover { background: @hover; }
+
+/* Only these modules contain icons without adjacent text. Mixed labels use Pango icon spans. */
+#custom-launcher, #custom-power, #custom-notifications { color: @accent; }
+#custom-notifications.dnd { color: @muted; }
+
+/* Custom media can put its label inside the event box’s hovered GtkBox. */
+box:hover > #custom-media { background: @bg; }

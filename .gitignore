@@ -1,0 +1,8 @@
+*.before-*
+*.bak*
+*.pre-*
+*.orig
+__pycache__/
+*.log
+state.json
+.cache/

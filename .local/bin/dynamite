@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+set -euo pipefail
+export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
+export WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-1}
+export DBUS_SESSION_BUS_ADDRESS=${DBUS_SESSION_BUS_ADDRESS:-unix:path=$XDG_RUNTIME_DIR/bus}
+export QS_ICON_THEME=${QS_ICON_THEME:-breeze-dark}
+if [[ -z ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
+  for session in "$XDG_RUNTIME_DIR"/hypr/*; do
+    [[ -S $session/.socket.sock ]] && export HYPRLAND_INSTANCE_SIGNATURE=${session##*/} && break
+  done
+fi
+ready() {
+  local reply
+  reply=$(timeout -k 0.1s 0.15s qs -c dynamite ipc call dynamite state 2>/dev/null) || return 1
+  [[ $reply == '{'* ]]
+}
+wait_ready() {
+  for i in {1..10}; do
+    ready && return 0
+    sleep 0.05
+  done
+  return 1
+}
+start() {
+  timeout -k 0.2s 2s qs -c dynamite -n -d || true
+  wait_ready && return 0
+  # A hot reload can leave the instance answering "Not ready" forever; replace it once.
+  local pids pid
+  pids=$(qs -c dynamite list -j 2>/dev/null | jq -r '.[].pid') || pids=
+  timeout -k 0.1s 0.3s qs -c dynamite kill >/dev/null 2>&1 || true
+  # Wait for the old process to release its instance lock before starting another.
+  for i in {1..10}; do
+    local alive=0
+    for pid in $pids; do kill -0 "$pid" 2>/dev/null && alive=1; done
+    (( alive == 0 )) && break
+    sleep 0.03
+  done
+  for pid in $pids; do
+    # A frozen QML event loop may never handle TERM. Only kill this named config.
+    if [[ -r /proc/$pid/cmdline ]] && [[ $(tr '\0' ' ' < "/proc/$pid/cmdline") == *"qs -c dynamite"* ]]; then
+      kill -KILL "$pid" 2>/dev/null || true
+    fi
+  done
+  for i in {1..10}; do
+    local alive=0
+    for pid in $pids; do kill -0 "$pid" 2>/dev/null && alive=1; done
+    (( alive == 0 )) && break
+    sleep 0.03
+  done
+  timeout -k 0.2s 2s qs -c dynamite -n -d || true
+  wait_ready && return 0
+  echo 'Dynamite did not start; inspect qs -c dynamite log.' >&2
+  return 1
+}
+case ${1:-start} in
+  start) ready || start ;;
+  stop) qs -c dynamite kill ;;
+  state) qs -c dynamite ipc call dynamite state ;;
+  close) qs -c dynamite ipc call dynamite close ;;
+  bars) qs -c dynamite ipc call dynamite bars ;;
+  toggle)
+    case ${2:-} in launcher|controls|themes|wallpapers|status) ;; *) echo 'Choose launcher, controls, themes, wallpapers or status' >&2; exit 2 ;; esac
+    ready || start
+    qs -c dynamite ipc call dynamite toggle "$2"
+    ;;
+  *) echo 'usage: dynamite [start|stop|state|close|toggle PANEL]' >&2; exit 2 ;;
+esac

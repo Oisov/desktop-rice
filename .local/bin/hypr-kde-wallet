@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=$XDG_RUNTIME_DIR/bus}"
+
+systemctl --user import-environment \
+  DBUS_SESSION_BUS_ADDRESS \
+  DISPLAY \
+  KDE_SESSION_VERSION \
+  PAM_KWALLET5_LOGIN \
+  SSH_AUTH_SOCK \
+  WAYLAND_DISPLAY \
+  XDG_CURRENT_DESKTOP \
+  XDG_SESSION_DESKTOP \
+  XDG_SESSION_TYPE >/dev/null 2>&1 || true
+
+dbus-update-activation-environment --systemd \
+  DBUS_SESSION_BUS_ADDRESS \
+  DISPLAY \
+  KDE_SESSION_VERSION \
+  PAM_KWALLET5_LOGIN \
+  SSH_AUTH_SOCK \
+  WAYLAND_DISPLAY \
+  XDG_CURRENT_DESKTOP \
+  XDG_SESSION_DESKTOP \
+  XDG_SESSION_TYPE >/dev/null 2>&1 || true
+
+if [ -n "${PAM_KWALLET5_LOGIN:-}" ] && [ -x /usr/lib/pam_kwallet_init ]; then
+  /usr/lib/pam_kwallet_init >/dev/null 2>&1 || true
+fi
+
+kded6 >/dev/null 2>&1 &
+
+if command -v qdbus6 >/dev/null 2>&1; then
+  wallet="$(qdbus6 org.kde.kwalletd6 /modules/kwalletd6 org.kde.KWallet.localWallet 2>/dev/null || printf kdewallet)"
+  if [ -n "$wallet" ] && ! qdbus6 org.kde.kwalletd6 /modules/kwalletd6 org.kde.KWallet.isOpen "$wallet" 2>/dev/null | grep -q true; then
+    qdbus6 org.kde.kwalletd6 /modules/kwalletd6 org.kde.KWallet.open "$wallet" 0 Hyprland >/dev/null 2>&1 || true
+  fi
+fi

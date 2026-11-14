@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+"""Color a menu row's leading glyph, leaving its label and existing markup alone."""
+import html
+from pathlib import Path
+import re
+import sys
+
+try:
+    palette = (Path.home() / '.local/state/dynamite/palette.css').read_text()
+    accent = re.search(r'@define-color accent (#[0-9a-fA-F]{6});', palette)[1]
+except (OSError, TypeError):
+    accent = '#9bcac1'
+for line in sys.stdin:
+    print(re.sub(r'^([^\s<])(\s+)', lambda m: f'<span foreground="{accent}">{html.escape(m[1])}</span>{m[2]}', line.rstrip('\n')), flush=True)

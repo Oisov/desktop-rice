@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Power menu: rofi dropdown under the power pill. Logout/reboot/shutdown ask once more.
+set -uo pipefail
+
+theme="$HOME/.config/rofi/bar-menu.rasi"
+menu() {
+  "$HOME/.local/bin/bar-menu-rows" | rofi -dmenu -i -markup-rows -no-custom -format i -theme "$theme" \
+    -theme-str 'window { width: 270px; } inputbar { enabled: false; }' "$@"
+}
+
+pgrep -x rofi >/dev/null && { pkill -x rofi; exit 0; }  # clicking the pill again closes it
+
+rows=("󰌾  Lock" "󰤄  Suspend" "󰍃  Log out" "󰜉  Restart" "󰐥  Shut down")
+i="$(printf '%s\n' "${rows[@]}" | menu)" || exit 0
+
+confirm() {
+  local j
+  j="$(printf '%s\n' "<span color='#d38b9e'>${1%% *}</span>${1#"${1%% *}"}" "󰜺  Cancel" | menu -mesg "$2")" || return 1
+  [[ "$j" == 0 ]]
+}
+
+case "$i" in
+  0) exec hyprlock ;;
+  1) exec systemctl suspend ;;
+  2) confirm "󰍃  Log out" "Close all apps and log out?" && exec hyprctl eval 'hl.dispatch(hl.dsp.exit())' ;;
+  3) confirm "󰜉  Restart" "Restart the computer?" && exec systemctl reboot ;;
+  4) confirm "󰐥  Shut down" "Shut down the computer?" && exec systemctl poweroff ;;
+esac

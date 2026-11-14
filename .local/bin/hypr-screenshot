@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+dir="$HOME/Pictures/Screenshots"
+mkdir -p "$dir"
+
+timestamp="$(date +%Y%m%d_%H%M%S)"
+file="$dir/Screenshot_${timestamp}.png"
+mode="${1:-copy-region}"
+
+notify() {
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send "Screenshot saved" "$1"
+  fi
+}
+
+# Don't stack a second area picker on top of a running one.
+pgrep -x slurp >/dev/null && exit 0
+
+case "$mode" in
+  full)
+    grim "$file"
+    notify "$file"
+    printf '%s\n' "$file"
+    ;;
+  region)
+    geometry="$(slurp)"
+    grim -g "$geometry" "$file"
+    notify "$file"
+    printf '%s\n' "$file"
+    ;;
+  copy-region)
+    geometry="$(slurp)"
+    grim -g "$geometry" - | wl-copy
+    if command -v notify-send >/dev/null 2>&1; then
+      notify-send "Screenshot copied" "Selected region copied to clipboard"
+    fi
+    ;;
+  copy-full)
+    grim - | wl-copy
+    if command -v notify-send >/dev/null 2>&1; then
+      notify-send "Screenshot copied" "Full screen copied to clipboard"
+    fi
+    ;;
+  annotate-region)
+    geometry="$(slurp)"
+    grim -g "$geometry" - | satty --filename - --output-filename "$file" --copy-command wl-copy --actions-on-enter save-to-clipboard,save-to-file,exit
+    ;;
+  *)
+    printf 'Usage: %s [full|region|copy-region|copy-full|annotate-region]\n' "$0" >&2
+    exit 2
+    ;;
+esac

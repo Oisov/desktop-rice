@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+fullscreen="$(hyprctl -j activewindow | jq -r '.fullscreen // 0')"
+
+if [[ "$fullscreen" != "0" ]]; then
+  hyprctl dispatch fullscreenstate 0 0 >/dev/null
+else
+  hyprctl dispatch fullscreenstate 2 0 >/dev/null
+fi

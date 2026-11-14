@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Waybar click guard: while a bar menu is open, a bar click only closes that menu.
+run=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
+closed=1
+pkill -x rofi && closed=0
+pid=$(cut -d' ' -f1 "$run/slider-popup.pid" 2>/dev/null)
+if [[ $pid =~ ^[0-9]+$ ]] && grep -qas slider-popup "/proc/$pid/cmdline"; then
+  kill "$pid" && closed=0
+fi
+((closed == 0)) && exit 0
+exec "$@"

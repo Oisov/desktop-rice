@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+class_re='^(Mattermost([.]Desktop)?|mattermost)$'
+workspace='special:mattermost'
+
+mapfile -t addresses < <(
+  hyprctl -j clients |
+    jq -r --arg re "$class_re" '.[] | select((.class // "") | test($re)) | .address'
+)
+
+if ((${#addresses[@]})); then
+  for address in "${addresses[@]}"; do
+    hyprctl eval "hl.dispatch(hl.dsp.window.move({ workspace = \"$workspace\", follow = false, window = \"address:$address\" }))" >/dev/null
+  done
+
+  hyprctl eval 'hl.dispatch(hl.dsp.workspace.toggle_special("mattermost"))' >/dev/null
+  exit 0
+fi
+
+hyprctl eval 'hl.dispatch(hl.dsp.exec_cmd("/usr/bin/mattermost-desktop"))' >/dev/null
+
+(
+  sleep 1.2
+  hyprctl eval 'hl.dispatch(hl.dsp.workspace.toggle_special("mattermost"))' >/dev/null 2>&1 || true
+) &
