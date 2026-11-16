@@ -3,6 +3,10 @@
 My Hyprland desktop appearance configs, including the Dynamite Quickshell bar
 and wallpaper picker. Paths mirror `$HOME`. Wallpaper images are not included.
 
+[![Dynamite bar and wallpaper picker on a clean desktop](docs/screenshots/dynamite-wallpaper-picker.png)](docs/screenshots/dynamite-wallpaper-picker.png)
+
+*Native 2560 × 1440 capture. Click the image to view it at full resolution.*
+
 ## Included
 - `.config/hypr` (hyprland.lua, hyprland.conf, hypridle, hyprlock, hyprpaper)
 - `.config/quickshell/dynamite` (active bar, desktop clock, launcher, themes and wallpaper picker)
@@ -12,7 +16,7 @@ and wallpaper picker. Paths mirror `$HOME`. Wallpaper images are not included.
 - `.config/gtk-3.0` and `.config/gtk-4.0` (settings.ini, gtk.css, colors.css)
 - `.local/bin`: dynamite, bar-menu-guard, bar-menu-rows, wifi-menu, hypr-power-menu, hypr-wallpaper, hypr-screenshot, hypr-startup-apps, hypr-toggle-compositor-fullscreen, hypr-kde-wallet, hypr-mattermost-scratchpad, slider-popup
 
-Not included: backup files (`*.before-*`, `*.bak*`, `*.pre-*`, `*.orig`), caches, logs, `state.json`, generated `~/.local/state/dynamite/palette.*`, files over 1 MB (none at the moment), and non-appearance scripts such as `osp-screen`.
+Not included: backup files (`*.before-*`, `*.bak*`, `*.pre-*`, `*.orig`), caches, logs, `state.json`, generated `~/.local/state/dynamite/palette.*`, live configuration files over 1 MB (documentation screenshots are kept separately), and non-appearance scripts such as `osp-screen`.
 
 ## Update
 ```
@@ -93,8 +97,9 @@ filenames only; missing library entries are not downloaded.
 
 The custom code and configuration in this repository are available under the
 [MIT License](LICENSE). Existing third-party copyright and license notices
-continue to apply to their respective material. Wallpaper images are not
-included or licensed by this repository.
+continue to apply to their respective material. Wallpaper library files are not
+bundled. Artwork visible in screenshots retains its original rights and is not
+covered by the MIT license.
 
 This is a personal desktop configuration: adapt the monitor layout, application
 commands and home paths before using it. The older rollback configs still
