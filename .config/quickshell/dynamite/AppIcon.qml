@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Effects
-import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Widgets
 
@@ -22,7 +21,7 @@ Item {
         visible:!!source.toString() && status !== Image.Error
         layer.enabled:true; layer.effect:root.flat ? flatEffect : shadedEffect
     }
-    Component { id:flatEffect; ColorOverlay { color:root.tint } }
+    Component { id:flatEffect; IconTint { color:root.tint } }
     Component { id:shadedEffect; MultiEffect { colorization:1.0; colorizationColor:root.tint } }
     ShellText { anchors.centerIn:parent; visible:!icon.visible; text:"󰀻"; color:root.tint; font.pixelSize:root.size }
 }

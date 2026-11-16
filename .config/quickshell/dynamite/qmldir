@@ -18,3 +18,4 @@ singleton Notifications 1.0 Notifications.qml
 MenuFrame 1.0 MenuFrame.qml
 AppIcon 1.0 AppIcon.qml
 DesktopClock 1.0 DesktopClock.qml
+IconTint 1.0 effects/IconTint.qml

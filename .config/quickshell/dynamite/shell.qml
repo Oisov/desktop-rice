@@ -1,5 +1,5 @@
 import QtQuick
-import Qt5Compat.GraphicalEffects
+import QtQuick.Effects
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
@@ -197,11 +197,17 @@ Scope {
             }
             MouseArea { anchors.fill:parent; onClicked:if (App.panel === "overview") App.pinOverview() }
             HoverHandler { id:panelHover; onHoveredChanged: { if (hovered) leave.stop(); else if (!hover.hovered && App.panel === "overview" && !App.overviewPinned) leave.restart(); } }
+            Rectangle {
+                id: panelMask
+                width: centerFrame.width; height: centerFrame.height
+                bottomLeftRadius: Math.min(19, height / 2); bottomRightRadius: bottomLeftRadius
+                visible: false; layer.enabled: true
+            }
             Item {
                 // Content is masked to the panel's rounded shape, so nothing pokes out while it grows.
                 anchors.fill:parent; clip:true
                 layer.enabled:App.joinActive && App.dropProgress < 1
-                layer.effect: OpacityMask { maskSource: Rectangle { width:centerFrame.width; height:centerFrame.height; bottomLeftRadius:Math.min(19, height/2); bottomRightRadius:bottomLeftRadius } }
+                layer.effect: MultiEffect { autoPaddingEnabled: false; maskEnabled: true; maskSource: panelMask; maskThresholdMin: 0.5; maskSpreadAtMin: 1.0 }
                 Loader {
                     id:panelLoader
                     anchors.horizontalCenter:parent.horizontalCenter

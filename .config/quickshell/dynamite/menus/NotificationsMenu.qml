@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Widgets
@@ -117,7 +116,7 @@ Item {
                         id: notificationIcon; anchors.centerIn: parent; implicitSize: 18
                         source: notificationRow.mark ? "file://" + App.home + "/.local/share/icons/dynamite-waybar/apps/" + notificationRow.mark + ".png" : notificationRow.iconName ? (notificationRow.iconName.startsWith("/") ? "file://" + notificationRow.iconName : Quickshell.iconPath(Quickshell.hasThemeIcon(notificationRow.symbolicName) ? notificationRow.symbolicName : notificationRow.iconName, true)) : ""
                         visible: status === Image.Ready
-                        layer.enabled: true; layer.effect: ColorOverlay { color: notificationRow.iconColor }
+                        layer.enabled: true; layer.effect: IconTint { color: notificationRow.iconColor }
                     }
                     trailing: [
                         Text { anchors.verticalCenter: parent.verticalCenter; visible: notificationRow.modelData.ids.length > 1; text: "×" + notificationRow.modelData.ids.length; color: App.palette.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 13 },

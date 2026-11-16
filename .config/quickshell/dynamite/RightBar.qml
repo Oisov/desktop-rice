@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Services.UPower
@@ -57,7 +56,7 @@ PanelWindow {
                         id: trayImage; anchors.centerIn: parent; implicitSize: 18
                         source: tray.modelData.icon
                         layer.enabled: true
-                        layer.effect: ColorOverlay { color: App.palette.accent }
+                        layer.effect: IconTint { color: App.palette.accent }
                     }
                     MouseArea {
                         id: trayPointer; anchors.fill: parent; hoverEnabled: true

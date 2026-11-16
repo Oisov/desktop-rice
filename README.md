@@ -54,12 +54,29 @@ overview back to the bar monitor.
 
 Dynamite needs a compatible Quickshell build (the office desktop uses 0.3.2),
 Hyprland with its Lua configuration/API, Python 3, and the Qt Quick Controls and
-Qt5Compat GraphicalEffects modules. Fonts are Barlow Condensed, JetBrainsMono
+Qt Quick Effects modules. Fonts are Barlow Condensed, JetBrainsMono
 Nerd Font Propo and Symbols Nerd Font. Audio, networking and brightness controls
 use pactl/wpctl, NetworkManager/nmcli and brightnessctl when available. See
 `.config/quickshell/dynamite/README.md` for details. This repository is a personal
 configuration snapshot, not an automatic installer; legacy rollback files and
 optional helpers may refer to additional locally installed programs.
+
+## Effect rendering checks
+
+The shell uses native `QtQuick.Effects` for icon tinting and rounded masks; it
+does not require Qt5Compat GraphicalEffects. The Qt Quick Test suite renders
+opaque and translucent icon samples, checks the tint colors, and exercises
+rounded masks while resizing and enabling/disabling the layer effect.
+
+With Qt Quick Test and Qt Quick Effects installed, run:
+
+```sh
+QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=rhi QSG_RHI_BACKEND=opengl \
+  qmltestrunner -input tests -o -,txt
+```
+
+On Fedora the runner may be at `/usr/lib64/qt6/bin/qmltestrunner`. Use the RHI
+renderer: the software scene graph does not exercise these shader effects.
 
 ## Wallpaper swapper (images not included)
 

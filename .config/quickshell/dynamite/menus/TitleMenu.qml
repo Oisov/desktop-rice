@@ -1,7 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
-import Qt5Compat.GraphicalEffects
 import Quickshell.Widgets
 import ".."
 
@@ -20,7 +19,7 @@ Item {
             label: (menu.task ? "" : menu.source?.modelData?.tooltipTitle) || menu.source?.modelData?.title || ""
             leading: IconImage {
                 anchors.centerIn: parent; implicitSize: 18; source: menu.task ? menu.source?.iconSource || "" : menu.source?.modelData?.icon || ""
-                layer.enabled: true; layer.effect: ColorOverlay { color: App.palette.accent }
+                layer.enabled: true; layer.effect: IconTint { color: App.palette.accent }
             }
             trailing: ShellButton {
                 visible: menu.task; anchors.verticalCenter: parent.verticalCenter; small: true; padding: 0; implicitWidth: 26; implicitHeight: 26; focusPolicy: Qt.NoFocus

@@ -1,7 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Effects
 import QtQuick.Controls
-import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Wayland
 import ".."
@@ -33,10 +33,11 @@ Item {
                 onClicked: menu.jumpToPlayer()
                 leading: Rectangle {
                     anchors.centerIn: parent; width: 22; height: 22; radius: 6; color: "transparent"; clip: true; visible: art.status === Image.Ready
+                    Rectangle { id: artMask; width: 22; height: 22; radius: 6; visible: false; layer.enabled: true }
                     Image {
                         id: art; anchors.fill: parent; source: menu.player?.trackArtUrl || ""; fillMode: Image.PreserveAspectCrop; asynchronous: true
                         layer.enabled: true
-                        layer.effect: OpacityMask { maskSource: Rectangle { width: 22; height: 22; radius: 6 } }
+                        layer.effect: MultiEffect { autoPaddingEnabled: false; maskEnabled: true; maskSource: artMask; maskThresholdMin: 0.5; maskSpreadAtMin: 1.0 }
                     }
                 }
                 id: trackRow; hoverHighlight: false; marquee: true; scrollNow: menu.frame.activeMenu === menu

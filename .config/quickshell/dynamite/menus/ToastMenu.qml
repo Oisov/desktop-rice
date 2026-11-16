@@ -1,7 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
-import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Widgets
 import ".."
@@ -42,7 +41,7 @@ Item {
                 id: toastIcon; anchors.centerIn: parent; implicitSize: 18
                 source: toastRow.mark ? "file://" + App.home + "/.local/share/icons/dynamite-waybar/apps/" + toastRow.mark + ".png" : toastRow.iconName ? (toastRow.iconName.startsWith("/") ? "file://" + toastRow.iconName : Quickshell.iconPath(Quickshell.hasThemeIcon(toastRow.symbolicName) ? toastRow.symbolicName : toastRow.iconName, true)) : ""
                 visible: status === Image.Ready
-                layer.enabled: true; layer.effect: ColorOverlay { color: toastRow.iconColor }
+                layer.enabled: true; layer.effect: IconTint { color: toastRow.iconColor }
             }
             trailing: [
                 Text { anchors.verticalCenter: parent.verticalCenter; visible: menu.toastQueue.length > 0; text: "+" + menu.toastQueue.length; color: App.palette.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 13 },
