@@ -17,7 +17,7 @@ See [wallpaper credits and downloads](#wallpaper-credits-and-downloads) below.
 - `.config/waybar` (rollback bar)
 - `.config/rofi`, `.config/mako`, `.config/kitty`, `.config/fontconfig/fonts.conf`
 - `.config/gtk-3.0` and `.config/gtk-4.0` (settings.ini, gtk.css, colors.css)
-- `.local/bin`: dynamite, bar-menu-guard, bar-menu-rows, wifi-menu, hypr-power-menu, hypr-wallpaper, hypr-screenshot, hypr-startup-apps, hypr-toggle-compositor-fullscreen, hypr-kde-wallet, hypr-mattermost-scratchpad, slider-popup
+- `.local/bin`: dynamite, dynamite-firefox, bar-menu-guard, bar-menu-rows, wifi-menu, hypr-power-menu, hypr-wallpaper, hypr-screenshot, hypr-startup-apps, hypr-toggle-compositor-fullscreen, hypr-kde-wallet, hypr-mattermost-scratchpad, slider-popup
 
 Not included: backup files (`*.before-*`, `*.bak*`, `*.pre-*`, `*.orig`), caches, logs, `state.json`, generated `~/.local/state/dynamite/palette.*`, live configuration files over 1 MB (documentation screenshots are kept separately), and non-appearance scripts such as `osp-screen`.
 
@@ -60,6 +60,44 @@ use pactl/wpctl, NetworkManager/nmcli and brightnessctl when available. See
 `.config/quickshell/dynamite/README.md` for details. This repository is a personal
 configuration snapshot, not an automatic installer; legacy rollback files and
 optional helpers may refer to additional locally installed programs.
+
+## Automatic Firefox colors (optional)
+
+Firefox can follow the current Dynamite palette live through
+[Pywalfox](https://github.com/Frewacom/pywalfox), using Firefox's supported theme
+API. The tab strip takes the palette's `bg` color (Tidepool: `#0b1112`), text and
+accents follow the palette, and Pywalfox derives the secondary toolbar shades.
+There is no Firefox restart on each theme change and no userChrome.css required.
+
+After installing the current Dynamite files and `.local/bin/dynamite-firefox`:
+
+1. Install the native helper: `uv tool install pywalfox` (or `pipx install pywalfox`).
+2. Run `~/.local/bin/dynamite-firefox setup` to register the host and enable sync.
+3. Install the signed [Pywalfox Firefox add-on](https://addons.mozilla.org/firefox/addon/pywalfox/).
+4. Click its toolbar icon and **Fetch Pywal colors** once. If Firefox was already
+   running and cannot find the newly registered host, restart Firefox once.
+
+Future Dynamite theme selections refresh Firefox automatically. Pywalfox's dark
+mode is selected during setup so its independent day/night schedule does not
+replace your chosen desktop palette. Its optional website theming and custom
+CSS features are not needed. You can customize the toolbar shades and other
+browser elements in Pywalfox's palette and theme templates.
+
+The helper registers only for your user, in the legacy and current Linux Mozilla
+native-messaging directories. It keeps its color cache at
+`~/.cache/dynamite/firefox/wal/colors.json`, separate from `~/.cache/wal`, and
+stores no browsing data. Standard XDG config/cache overrides are respected.
+Generated manifests, browser profiles, and per-machine opt-in state are not
+tracked here. Browser/host failures do not prevent a desktop theme change.
+
+To stop automatic updates, remove `~/.config/dynamite/firefox-sync`; choose a
+normal theme in Firefox's add-on manager to restore its own colors.
+
+The exporter and setup wrapper tests use temporary paths and no browser profile:
+
+```sh
+python3 -m unittest discover -s tests -p 'test_*.py'
+```
 
 ## Effect rendering checks
 

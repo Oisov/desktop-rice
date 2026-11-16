@@ -8,7 +8,7 @@ Run `~/.local/bin/dynamite start` or use SUPER+D / SUPER+Space (overview), SUPER
 
 `shell.qml` owns the transparent layer surface, input region, fullscreen policy and transitions. `App.qml` owns theme, media, power, Bluetooth and helper process state. `bridge.py` adapts existing PulseAudio, brightnessctl, NetworkManager, mako and wallpaper commands without shell interpolation. Theme and wallpaper selection is independent of the persisted applied state. The Python helper uses only the standard library.
 
-Palettes live in `themes.json`. State is stored in `~/.local/state/dynamite/state.json`; wallpapers share `~/.cache/hypr-wallpaper/state` with the existing scheduler. A shell theme also recolors Waybar, its rofi menus (power, Wi-Fi) and slider-popup through `~/.local/state/dynamite/palette.{css,rasi}`; other applications are untouched.
+Palettes live in `themes.json`. State is stored in `~/.local/state/dynamite/state.json`; wallpapers share `~/.cache/hypr-wallpaper/state` with the existing scheduler. A shell theme also recolors Waybar, its rofi menus (power, Wi-Fi) and slider-popup through `~/.local/state/dynamite/palette.{css,rasi}`; Optional Firefox color sync is available through Pywalfox and `dynamite-firefox setup`; see the repository README. Other applications are untouched.
 
 The laptop and office workstation autostart Dynamite instead of Waybar. Changes to active source files hot-reload, so keep a terminal available with `dynamite stop` while editing. No regression tests were added.
 

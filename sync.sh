@@ -20,6 +20,7 @@ INCLUDE=(
   .config/gtk-4.0/colors.css
   .config/fontconfig/fonts.conf
   .local/bin/dynamite
+  .local/bin/dynamite-firefox
   .local/bin/bar-menu-guard
   .local/bin/bar-menu-rows
   .local/bin/wifi-menu

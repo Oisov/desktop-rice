@@ -273,6 +273,43 @@ def export_hyprland(theme):
             raise RuntimeError('Hyprland border update failed: ' + reply)
 
 
+def firefox_palette(theme):
+    """Pywalfox's default dark template uses 0 for frame, 10/13 for accents, 15 for text."""
+    bg, surface, text, muted, accent = (theme[k] for k in ('bg', 'surface', 'text', 'muted', 'accent'))
+    colors = [bg, surface, accent, accent, accent, accent, muted, text,
+              surface, surface, accent, accent, accent, accent, muted, text]
+    return dict(wallpaper='', special=dict(background=bg, foreground=text, cursor=accent),
+                colors={f'color{i}': value for i, value in enumerate(colors)})
+
+
+def export_firefox(theme):
+    """Refresh an opted-in browser through Pywalfox; browser outages never block the shell."""
+    config = Path(os.environ.get('XDG_CONFIG_HOME', HOME / '.config')) / 'dynamite/firefox-sync'
+    if not config.is_file():
+        return False
+    target = Path(os.environ.get('XDG_CACHE_HOME', HOME / '.cache')) / 'dynamite/firefox/wal/colors.json'
+    temporary = None
+    try:
+        data = json.dumps(firefox_palette(theme), indent=2) + '\n'
+        if target.exists() and target.read_text() == data:
+            return False
+        target.parent.mkdir(parents=True, exist_ok=True)
+        fd, temporary = tempfile.mkstemp(prefix='.colors-', dir=target.parent)
+        with os.fdopen(fd, 'w') as stream:
+            stream.write(data)
+        os.replace(temporary, target)
+        wrapper = HOME / '.local/bin/dynamite-firefox'
+        if os.access(wrapper, os.X_OK):
+            subprocess.run([str(wrapper), 'update'], capture_output=True, timeout=2, check=False)
+        return True
+    except (OSError, subprocess.TimeoutExpired) as error:
+        print(f'Dynamite Firefox sync: {error}', file=sys.stderr)
+        return False
+    finally:
+        if temporary is not None:
+            Path(temporary).unlink(missing_ok=True)
+
+
 def export_palette(theme):
     """Hand the applied palette to Waybar, its rofi menus and slider-popup. Returns True if it changed."""
     # Same state tints as App.tone() in QML: hover 0x30/255, pressed 0x55/255 toward the accent.
@@ -290,6 +327,7 @@ def export_palette(theme):
             target.with_suffix('.tmp').write_text(text)
             os.replace(target.with_suffix('.tmp'), target)
             changed = True
+    export_firefox(theme)
     return changed
 
 

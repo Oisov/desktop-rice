@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Optional Pywalfox bridge. Keep its palette separate from ~/.cache/wal.
+set -euo pipefail
+pywalfox_bin=$(command -v pywalfox || true)
+if [[ -z $pywalfox_bin && -x $HOME/.local/bin/pywalfox ]]; then
+    pywalfox_bin=$HOME/.local/bin/pywalfox
+fi
+if [[ -z $pywalfox_bin ]]; then
+    echo 'Install the native helper first: uv tool install pywalfox (or pipx install pywalfox).' >&2
+    exit 1
+fi
+config_root=${XDG_CONFIG_HOME:-$HOME/.config}
+cache_root=${XDG_CACHE_HOME:-$HOME/.cache}
+export XDG_CACHE_HOME=$cache_root/dynamite/firefox
+mkdir -p "$XDG_CACHE_HOME"
+
+if [[ ${1:-} == setup ]]; then
+    # Firefox 147+ moved Linux profiles/manifests under XDG_CONFIG_HOME/mozilla.
+    # Register both locations to support current and older installations.
+    wrapper=$HOME/.local/bin/dynamite-firefox
+    profile_root=$config_root/mozilla/firefox
+    [[ -d $profile_root ]] || profile_root=$HOME/.mozilla/firefox
+    for manifest_root in "$config_root/mozilla/native-messaging-hosts" "$HOME/.mozilla/native-messaging-hosts"; do
+        "$pywalfox_bin" install --manifest-path "$manifest_root" --profile-path "$profile_root" --executable "$wrapper"
+    done
+    "$pywalfox_bin" dark
+    mkdir -p "$config_root/dynamite"
+    touch "$config_root/dynamite/firefox-sync"
+    XDG_CACHE_HOME="$cache_root" python3 "$config_root/quickshell/dynamite/bridge.py" catalog >/dev/null
+    echo 'Local sync is ready. Install Pywalfox in Firefox, then click Fetch Pywal colors once.'
+    exit
+fi
+# Forward Firefox's native-messaging arguments unchanged, or CLI commands such as update.
+exec "$pywalfox_bin" "$@"
