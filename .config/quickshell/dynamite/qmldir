@@ -1,13 +1,11 @@
 module Dynamite
 singleton App 1.0 App.qml
 ShellButton 1.0 ShellButton.qml
-Controls 1.0 Controls.qml
 ShellText 1.0 ShellText.qml
-Launcher 1.0 Launcher.qml
+Overview 1.0 Overview.qml
 Level 1.0 Level.qml
 Picker 1.0 Picker.qml
 Search 1.0 Search.qml
-Status 1.0 Status.qml
 Workspaces 1.0 Workspaces.qml
 BarItem 1.0 BarItem.qml
 RightBar 1.0 RightBar.qml
@@ -16,3 +14,7 @@ LeftBar 1.0 LeftBar.qml
 ConcaveCorner 1.0 ConcaveCorner.qml
 MusicControls 1.0 MusicControls.qml
 MenuRow 1.0 MenuRow.qml
+singleton Notifications 1.0 Notifications.qml
+MenuFrame 1.0 MenuFrame.qml
+AppIcon 1.0 AppIcon.qml
+DesktopClock 1.0 DesktopClock.qml

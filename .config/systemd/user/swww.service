@@ -1,0 +1,7 @@
+[Unit]
+Description=Wallpaper daemon
+
+[Service]
+ExecStart=/usr/bin/swww-daemon
+Restart=on-failure
+RestartSec=2

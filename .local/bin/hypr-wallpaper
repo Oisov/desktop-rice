@@ -1,15 +1,33 @@
 #!/usr/bin/env bash
-# One time-of-day wallpaper, shared across all connected outputs.
+# Time-of-day wallpapers across both monitors (swww).
+#
+#   hypr-wallpaper          apply the current slot (keeps today's pick for the slot)
+#   hypr-wallpaper next     pick another image for the current slot
+#   hypr-wallpaper <slot>   force a slot (morning|day|evening|night), new pick
+#
+# Library: ~/Pictures/wallpapers/<slot>/
+#   *.wide.png  5120x1440, split down the middle across both monitors
+#   *.png       single 16:9 image; two different ones are paired, one per monitor
+# Empty slot -> ~/Pictures/wallpapers/.seed/<slot>/ -> any slot -> Hyprland default.
 set -euo pipefail
+
 LIB=${WALLPAPER_DIR:-$HOME/Pictures/wallpapers}
 CACHE=${XDG_CACHE_HOME:-$HOME/.cache}/hypr-wallpaper
 STATE=$CACHE/state
-export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
-export WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-1}
+WIDE_CHANCE=${WIDE_CHANCE:-50}   # % chance to prefer a wide image when both kinds exist
+SLOTS=(morning day evening night)
 mkdir -p "$CACHE"
-# Serialize manual changes with the time-of-day timer.
-exec 9>"$CACHE/lock"
-flock 9
+
+# Running from a systemd timer: find the Wayland/Hyprland session ourselves.
+run=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
+if [[ -z ${WAYLAND_DISPLAY:-} ]]; then
+  sock=$(find "$run" -maxdepth 1 -name 'wayland-[0-9]*' ! -name '*.lock' -printf '%f\n' | sort | head -1)
+  export WAYLAND_DISPLAY=${sock:-wayland-1}
+fi
+if [[ -z ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
+  sig=$(ls -t "$run/hypr" 2>/dev/null | head -1 || true)
+  [[ -n $sig ]] && export HYPRLAND_INSTANCE_SIGNATURE=$sig
+fi
 
 slot_now() {
   local t=$((10#$(date +%H) * 60 + 10#$(date +%M)))
@@ -20,34 +38,106 @@ slot_now() {
   else                           echo night
   fi
 }
+
+# Monitors left-to-right.
+mapfile -t OUTS < <(hyprctl monitors -j | python3 -c 'import json,sys
+for m in sorted(json.load(sys.stdin), key=lambda m: m["x"]): print(m["name"])')
+(( ${#OUTS[@]} )) || { echo "no monitors found" >&2; exit 1; }
+
+# Start swww-daemon if needed and wait for it.
+if ! swww query >/dev/null 2>&1; then
+  (setsid swww-daemon >/dev/null 2>&1 &)
+  for _ in $(seq 50); do swww query >/dev/null 2>&1 && break; sleep 0.1; done
+fi
+
+arg=${1:-}
 force=0 chosen=
-case ${1:-} in
-  "") slot=$(slot_now) ;;
-  next) slot=$(slot_now); force=1 ;;
-  set) slot=$(slot_now); chosen=$(realpath -e -- "${2:?usage: hypr-wallpaper set FILE}")
-       [[ -f $chosen ]] || { echo "not a file: $chosen" >&2; exit 2; } ;;
-  morning|day|evening|night) slot=$1; force=1 ;;
-  *) echo "usage: hypr-wallpaper [next|morning|day|evening|night|set FILE]" >&2; exit 2 ;;
+case $arg in
+  "")    slot=$(slot_now) ;;
+  next)  slot=$(slot_now); force=1 ;;
+  set) slot=$(slot_now); chosen=$(realpath -e -- "${2:?usage: hypr-wallpaper set FILE}"); [[ -f $chosen ]] || exit 2; force=1 ;;
+  morning|day|evening|night) slot=$arg; force=1 ;;
+  *) echo "usage: hypr-wallpaper [next|morning|day|evening|night]" >&2; exit 2 ;;
 esac
 
+images_in() { find "$1" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) 2>/dev/null | sort; }
+
+pick_dir() {
+  local d
+  for d in "$LIB/$slot" "$LIB/.seed/$slot"; do
+    [[ -n $(images_in "$d") ]] && { echo "$d"; return; }
+  done
+  for s in "${SLOTS[@]}"; do
+    [[ -n $(images_in "$LIB/$s") ]] && { echo "$LIB/$s"; return; }
+  done
+}
+
+# Choose: "wide <file>" or "pair <file> <file>". Avoid repeating the previous pick.
+choose() {
+  local dir=$1 prev=$2 wides singles
+  mapfile -t wides   < <(images_in "$dir" | grep -i '\.wide\.' || true)
+  mapfile -t singles < <(images_in "$dir" | grep -iv '\.wide\.' || true)
+  local use_wide=0
+  if (( ${#wides[@]} && ${#singles[@]} )); then
+    (( RANDOM % 100 < WIDE_CHANCE )) && use_wide=1
+  elif (( ${#wides[@]} )); then use_wide=1; fi
+
+  if (( use_wide )); then
+    local pool=("${wides[@]}")
+    (( ${#pool[@]} > 1 )) && mapfile -t pool < <(printf '%s\n' "${wides[@]}" | grep -vxF "$prev" || true)
+    echo "wide ${pool[RANDOM % ${#pool[@]}]}"
+  else
+    local a b
+    mapfile -t shuf < <(printf '%s\n' "${singles[@]}" | shuf)
+    a=${shuf[0]}; b=${shuf[1]:-$a}
+    echo "pair $a $b"
+  fi
+}
+
 today=$(date +%F)
-s_day= s_slot= pick=
-if [[ -f $STATE ]]; then read -r s_day s_slot pick < "$STATE" || true; fi
-previous=$pick
+pick=""
 if [[ -n $chosen ]]; then
-  pick=$chosen
-elif (( force )) || [[ $s_day != "$today" || $s_slot != "$slot" || ! -f $pick ]]; then
-  mapfile -d '' -t images < <(find "$LIB/$slot" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) ! -iname '*.wide.*' -print0)
-  (( ${#images[@]} )) || { echo "no wallpapers in $LIB/$slot" >&2; exit 1; }
-  pick=${images[RANDOM % ${#images[@]}]}
-  while (( ${#images[@]} > 1 )) && [[ $pick == "$previous" ]]; do
-    pick=${images[RANDOM % ${#images[@]}]}
+  pick="pair $chosen $chosen"
+  printf "%s %s %s\n" "$today" "$slot" "$pick" > "$STATE"
+fi
+if (( !force )) && [[ -f $STATE ]]; then
+  read -r s_day s_slot s_pick < "$STATE" || true
+  if [[ ${s_day:-} == "$today" && ${s_slot:-} == "$slot" ]]; then
+    pick=$s_pick
+    for f in ${pick#* }; do [[ -f $f ]] || pick=""; done
+  fi
+fi
+
+if [[ -z $pick ]]; then
+  dir=$(pick_dir || true)
+  if [[ -z $dir ]]; then
+    pick="pair /usr/share/hypr/wall0.png /usr/share/hypr/wall0.png"
+  else
+    prev=$(awk '{print $4}' "$STATE" 2>/dev/null || true)
+    pick=$(choose "$dir" "$prev")
+  fi
+  echo "$today $slot $pick" > "$STATE"
+fi
+
+TRANS=(--transition-type fade --transition-duration 3 --transition-fps 60)
+read -r kind f1 f2 <<<"$pick"
+if [[ $kind == wide && ${#OUTS[@]} -ge 2 ]]; then
+  # Split into one slice per monitor (cached by file + mtime).
+  key=$(printf '%s' "$f1$(stat -c %Y "$f1")" | md5sum | cut -c1-12)
+  n=${#OUTS[@]}
+  if [[ ! -f $CACHE/$key-0.png ]]; then
+    rm -f "$CACHE"/*-[0-9].png
+    magick "$f1" -crop "${n}x1@" +repage "$CACHE/$key-%d.png"
+  fi
+  for i in "${!OUTS[@]}"; do
+    swww img -o "${OUTS[i]}" --resize crop "${TRANS[@]}" "$CACHE/$key-$i.png" &
+  done
+else
+  [[ $kind == wide ]] && f2=$f1
+  for i in "${!OUTS[@]}"; do
+    f=$f1; (( i % 2 )) && f=${f2:-$f1}
+    swww img -o "${OUTS[i]}" --resize crop "${TRANS[@]}" "$f" &
   done
 fi
-systemctl --user start awww.service
-for _ in {1..50}; do awww query >/dev/null 2>&1 && break; sleep 0.1; done
-awww img --resize crop --transition-type fade --transition-duration 3 --transition-fps 60 "$pick"
-ln -sfn "$pick" "$CACHE/current"
-printf '%s %s %s\n' "$today" "$slot" "$pick" > "$STATE.tmp"
-mv -f "$STATE.tmp" "$STATE"
-printf '%s: %s\n' "$slot" "$pick"
+wait
+echo "$slot: $pick"

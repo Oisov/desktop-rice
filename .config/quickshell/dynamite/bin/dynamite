@@ -1,13 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export PATH="$HOME/.local/bin:$PATH"
 export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
-export WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-1}
 export DBUS_SESSION_BUS_ADDRESS=${DBUS_SESSION_BUS_ADDRESS:-unix:path=$XDG_RUNTIME_DIR/bus}
 export QS_ICON_THEME=${QS_ICON_THEME:-breeze-dark}
 if [[ -z ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
   for session in "$XDG_RUNTIME_DIR"/hypr/*; do
     [[ -S $session/.socket.sock ]] && export HYPRLAND_INSTANCE_SIGNATURE=${session##*/} && break
   done
+fi
+if [[ -z ${WAYLAND_DISPLAY:-} ]]; then
+  export WAYLAND_DISPLAY=$(hyprctl instances -j | python3 -c 'import json,os,sys; print(next((i["wl_socket"] for i in json.load(sys.stdin) if i["instance"] == os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")), "wayland-1"))')
+fi
+if [[ -z ${DYNAMITE_BAR_SCREEN:-} && -f $HOME/.config/hypr/host.lua ]] && command -v lua >/dev/null; then
+  export DYNAMITE_BAR_SCREEN=$(lua -e 'local h=dofile(os.getenv("HOME").."/.config/hypr/host.lua"); print(h.bar_screen or h.primary or "")')
 fi
 ready() {
   local reply
@@ -58,10 +64,17 @@ case ${1:-start} in
   state) qs -c dynamite ipc call dynamite state ;;
   close) qs -c dynamite ipc call dynamite close ;;
   bars) qs -c dynamite ipc call dynamite bars ;;
+  search)
+    ready || start
+    qs -c dynamite ipc call dynamite overviewSearch "${2:-}"
+    ;;
   toggle)
     case ${2:-} in launcher|controls|themes|wallpapers|status) ;; *) echo 'Choose launcher, controls, themes, wallpapers or status' >&2; exit 2 ;; esac
     ready || start
     qs -c dynamite ipc call dynamite toggle "$2"
+    if [[ ${DYNAMITE_FROM_SEARCH:-0} != 1 ]]; then
+      python3 "$HOME/.config/quickshell/dynamite/bridge.py" bind-used "~/.local/bin/dynamite toggle $2" >/dev/null &
+    fi
     ;;
   *) echo 'usage: dynamite [start|stop|state|close|toggle PANEL]' >&2; exit 2 ;;
 esac

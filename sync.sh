@@ -5,6 +5,9 @@ set -euo pipefail
 INCLUDE=(
   .config/hypr
   .config/quickshell/dynamite
+  .config/systemd/user/swww.service
+  .config/systemd/user/hypr-wallpaper.service
+  .config/systemd/user/hypr-wallpaper.timer
   .config/waybar
   .config/rofi
   .config/mako
@@ -30,7 +33,7 @@ INCLUDE=(
   .local/bin/slider-popup
 )
 
-EXCLUDES=('*.before-*' '*.bak*' '*.pre-*' '*.orig' '__pycache__' '*.log' 'state.json' '.cache')
+EXCLUDES=('*.before-*' '*.bak*' '*.pre-*' '*.orig' '__pycache__' '*.log' 'state.json' '.cache' '.git' 'kitty-themes' '*.pyc')
 
 cd "$(dirname "$0")"
 args=(-a --relative --delete --prune-empty-dirs --max-size=1M)

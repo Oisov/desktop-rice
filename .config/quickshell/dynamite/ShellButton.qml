@@ -22,7 +22,7 @@ Button {
         spacing: 10
         leftPadding: control.small ? 0 : 12
         Rectangle {
-            width: control.small ? control.availableWidth : 34; height: 34; radius: 17
+            width: control.small ? control.availableWidth : 34; height: control.small ? Math.min(34, control.availableHeight) : 34; radius: height / 2
             anchors.verticalCenter: parent.verticalCenter
             color: control.active ? App.palette.accent : "transparent"
             ShellText { anchors.centerIn: parent; text: control.glyph; font.family: "Symbols Nerd Font"; font.pixelSize: 18; color: control.active ? App.palette.bg : App.palette.accent }

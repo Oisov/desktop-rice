@@ -6,3 +6,12 @@ __pycache__/
 *.log
 state.json
 .cache/
+
+# Wallpaper libraries and generated previews stay outside this repository.
+Pictures/
+wallpapers/
+*.wide.png
+*.wide.jpg
+*.wide.jpeg
+*.wide.webp
+*.pyc

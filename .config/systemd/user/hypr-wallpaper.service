@@ -1,0 +1,8 @@
+[Unit]
+Description=Time-of-day wallpaper
+Requires=swww.service
+After=swww.service
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/hypr-wallpaper

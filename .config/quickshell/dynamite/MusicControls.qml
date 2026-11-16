@@ -63,20 +63,19 @@ Item {
     RowLayout {
         visible: music.layered; anchors.fill: parent; spacing: 8
         ShellButton { small: true; glyph: "󰒮"; text: "Previous track"; implicitWidth: 32; implicitHeight: 32; enabled: music.player?.canGoPrevious || false; onClicked: music.player.previous() }
-        ShellButton { small: true; glyph: music.player?.isPlaying ? "󰏤" : "󰐊"; text: "Play or pause"; implicitWidth: 32; implicitHeight: 32; enabled: music.player?.canTogglePlaying || false; onClicked: music.player.togglePlaying() }
         ShellButton { small: true; glyph: "󰒭"; text: "Next track"; implicitWidth: 32; implicitHeight: 32; enabled: music.player?.canGoNext || false; onClicked: music.player.next() }
         Slider {
-            id: stripTimeline; Layout.fillWidth: true; height: 16; padding: 0; from: 0; to: Math.max(1, music.player?.length || 0)
+            id: stripTimeline; Layout.fillWidth: true; Layout.fillHeight: true; padding: 0; from: 0; to: Math.max(1, music.player?.length || 0)
             value: Math.min(music.playhead, to); enabled: music.player?.canSeek || false
             Accessible.name: "Track position"
             onPressedChanged: if (!pressed && enabled && music.player) music.player.position = value
             background: Rectangle {
-                y: (stripTimeline.height - height) / 2; width: stripTimeline.availableWidth; height: 2; radius: 1; color: App.palette.surface
-                Rectangle { width: stripTimeline.visualPosition * parent.width; height: parent.height; radius: 1; color: App.palette.accent }
+                y: (stripTimeline.height - height) / 2; width: stripTimeline.availableWidth; height: stripTimeline.hovered || stripTimeline.pressed ? 6 : 4; radius: height / 2; color: App.palette.surface
+                Rectangle { width: stripTimeline.visualPosition * parent.width; height: parent.height; radius: parent.radius; color: App.palette.accent }
             }
             handle: Rectangle {
                 x: stripTimeline.visualPosition * (stripTimeline.availableWidth - width); y: (stripTimeline.height - height) / 2
-                width: 6; height: 6; radius: 3; color: App.palette.accent; visible: stripTimeline.hovered || stripTimeline.pressed
+                width: 14; height: 14; radius: 7; color: App.palette.text; visible: stripTimeline.hovered || stripTimeline.pressed
             }
         }
         Text {
