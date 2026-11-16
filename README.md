@@ -1,6 +1,7 @@
 # desktop-rice
 
-Private copy of my Hyprland desktop appearance configs. Paths mirror `$HOME`.
+My Hyprland desktop appearance configs, including the Dynamite Quickshell bar
+and wallpaper picker. Paths mirror `$HOME`. Wallpaper images are not included.
 
 ## Included
 - `.config/hypr` (hyprland.lua, hyprland.conf, hypridle, hyprlock, hyprpaper)
@@ -88,10 +89,13 @@ Wallpaper images, thumbnails, caches and applied selection state are not part of
 this repository. `wallpaper-tags.json` contains optional search tags and relative
 filenames only; missing library entries are not downloaded.
 
-## Sharing
+## License
 
-The repository currently remains private. Before publishing, review the complete
-Git history as well as the current files: commit identities, machine-specific
-paths and application choices will become visible. The older rollback configs
-still contain `/home/oisov` paths that another user must replace. Choose a license
-for the custom code and retain upstream notices for third-party material.
+The custom code and configuration in this repository are available under the
+[MIT License](LICENSE). Existing third-party copyright and license notices
+continue to apply to their respective material. Wallpaper images are not
+included or licensed by this repository.
+
+This is a personal desktop configuration: adapt the monitor layout, application
+commands and home paths before using it. The older rollback configs still
+contain `/home/oisov` paths that another user must replace.
