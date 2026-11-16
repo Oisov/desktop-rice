@@ -7,6 +7,9 @@ and wallpaper picker. Paths mirror `$HOME`. Wallpaper images are not included.
 
 *Native 2560 × 1440 capture. Click the image to view it at full resolution.*
 
+Wallpaper artwork by **[Alena Aenami (Aenami)](https://aenamiart.artstation.com/)**.
+See [wallpaper credits and downloads](#wallpaper-credits-and-downloads) below.
+
 ## Included
 - `.config/hypr` (hyprland.lua, hyprland.conf, hypridle, hyprlock, hyprpaper)
 - `.config/quickshell/dynamite` (active bar, desktop clock, launcher, themes and wallpaper picker)
@@ -92,6 +95,36 @@ systemctl --user enable --now hypr-wallpaper.timer
 Wallpaper images, thumbnails, caches and applied selection state are not part of
 this repository. `wallpaper-tags.json` contains optional search tags and relative
 filenames only; missing library entries are not downloaded.
+
+## Wallpaper credits and downloads
+
+Most wallpapers in my personal collection, including the featured desktop
+background, are by **[Alena Aenami (Aenami)](https://aenamiart.artstation.com/)**.
+The desktop shell and wallpaper picker are my configuration; the artwork is hers.
+This is not a complete attribution list for every thumbnail or image in my library.
+
+To get wallpapers for your own setup:
+
+1. Browse Aenami's [official ArtStation store](https://aenamiart.artstation.com/store)
+   for downloadable wallpaper packs. For example,
+   [Wallpaper Pack 03](https://aenamiart.artstation.com/store/dBvng/wallpaper-pack-03-15-artworks-in-4k)
+   contains 15 artworks in 4K. Her [Patreon](https://www.patreon.com/aenamiart/about)
+   also offers HD wallpaper rewards; check the current membership details there.
+2. Download your purchased pack from the artist's store and extract it locally.
+3. Put your chosen images into the `morning`, `day`, `evening` and `night` folders
+   under `~/Pictures/wallpapers`, grouped by the mood you want at each time.
+
+```sh
+mkdir -p "$HOME/Pictures/wallpapers/"{morning,day,evening,night}
+# Example: copy a downloaded image into the daytime collection.
+cp "/path/to/downloaded-artwork.jpg" "$HOME/Pictures/wallpapers/day/"
+hypr-wallpaper next
+```
+
+The picker reads your local library; it does not fetch images automatically.
+Use ordinary filenames for standard wallpapers, and reserve `.wide.` filenames
+for panoramas you want split across monitors. The artwork remains separate from
+the MIT-licensed configuration and is not redistributed as a wallpaper pack here.
 
 ## License
 
